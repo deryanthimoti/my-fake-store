@@ -1,7 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [
+      {
+        source: "/shopping-cart",
+        missing: [
+          {
+            type: "cookie",
+            key: "auth_token",
+          }
+        ],
+        permanent: false,
+        destination: '/login',
+      }
+    ]
+  }
 };
 
 export default nextConfig;
