@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState, forwardRef } from 'react';
 import { 
   TableContainer, 
   Table, 
@@ -8,7 +8,10 @@ import {
   TableBody,
   Pagination,
   Button,
+  TextField,
+  Box,
 } from '@mui/material';
+import type { TextFieldProps } from '@mui/material';
 import DatePicker from 'react-datepicker';
 
 import ShoppingCartInfoModalDialog from './ShoppingCartInfoModalDialog';
@@ -27,27 +30,40 @@ type ActiveShoppingCart = {
   }[];
 };
 
+// @ts-ignore
+interface CustomDateInputProps extends TextFieldProps {
+  value?: string;
+  onClick?: () => void;
+};
+
 export default function ShoppingCartTable() {
   const shoppingCartState = useShoppingCartStateContext();
+  const [list, setList] = useState<ShoppingCart[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [startDate, setStartDate] = useState(new Date());
-  const [endDate, setEndDate] = useState(null);
+  const [startDate, setStartDate] = useState(new Date('2020-01-01'));
+  const [endDate, setEndDate] = useState(new Date());
   const [activeShoppingCart, setActiveShoppingCart] = useState<ActiveShoppingCart | null>(null);
   const [isShoppingCartProductsOpen, setIsShoppingCartProductsOpen] = useState(false);
 
-  const shoppingCartList = useMemo(() => {
-    const tempList = shoppingCartState ? [...shoppingCartState.list] : [];
-    return tempList.slice((currentPage - 1) * 5, currentPage * 5);
-  }, [currentPage]);
+  useEffect(() => {
+    setList(shoppingCartState ? shoppingCartState.list : []);
+  }, [shoppingCartState]);
 
   const onChange = (dates: any) => {
     const [start, end] = dates;
     setStartDate(start);
     setEndDate(end);
+    if (start !== null && end !== null) {
+      setCurrentPage(1);
+      // @ts-ignore
+      const temp = [...shoppingCartState?.list].filter(item => {
+        return (new Date(item.date) >= start) && (new Date(item.date) <= end)
+      });
+      setList(temp);
+    }
   };
 
   const handleOpenProductsModalDialog = (shoppingCart: ShoppingCart) => {
-    console.log(shoppingCart);
     setActiveShoppingCart({
       id: shoppingCart.id,
       // @ts-ignore
@@ -67,34 +83,59 @@ export default function ShoppingCartTable() {
     setActiveShoppingCart(null);
   };
 
+  const handleResetDatePicker = () => {
+    setStartDate(new Date('2020-01-01'));
+    setEndDate(new Date());
+    setList(shoppingCartState ? shoppingCartState.list : []);
+  };
+
   const getUsername = (userId: number) => {
-    
     return shoppingCartState && shoppingCartState.users.filter(user => user.id === userId).length > 0 ? shoppingCartState.users.filter(user => user.id === userId)[0].username : '';
   };
 
+  const CustomDateInput = forwardRef<HTMLInputElement, CustomDateInputProps>(
+    ({ value, onClick, ...props }, ref) => {
+      return (
+        <TextField
+          fullWidth
+          inputRef={ref}
+          value={value}
+          onClick={onClick}
+          {...props}
+        />
+      );
+    }
+  );
+
   return (
     <>
-      <DatePicker
-        selected={startDate}
-        onChange={onChange}
-        startDate={startDate}
-        endDate={endDate}
-        selectsRange
-        inline
-      />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 4}}>
+        <DatePicker
+          selected={startDate}
+          onChange={onChange}
+          startDate={startDate}
+          endDate={endDate}
+          maxDate={new Date()}
+          selectsRange
+          customInput={<CustomDateInput />}
+        />
+        <Button onClick={handleResetDatePicker} variant='contained' color='error'>
+          Reset
+        </Button>
+      </Box>
       <TableContainer>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>User ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Created Date</TableCell>
-              <TableCell>Products</TableCell>
+              <TableCell><strong>ID</strong></TableCell>
+              <TableCell><strong>User ID</strong></TableCell>
+              <TableCell><strong>Name</strong></TableCell>
+              <TableCell><strong>Created Date</strong></TableCell>
+              <TableCell><strong>Products</strong></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {shoppingCartList.map(shoppingCart => (
+            {[...list].slice((currentPage - 1) * 5, currentPage * 5).map(shoppingCart => (
               <TableRow key={shoppingCart.id}>
                 <TableCell>{shoppingCart.id}</TableCell>
                 <TableCell>{shoppingCart.userId}</TableCell>
@@ -111,7 +152,7 @@ export default function ShoppingCartTable() {
           page={currentPage} 
           onChange={(_e, page) => setCurrentPage(page)}
           // @ts-ignore
-          count={Math.ceil(shoppingCartState?.list.length / 5)} 
+          count={Math.ceil(list.length / 5)} 
         />
       </div>
       <ShoppingCartInfoModalDialog 

@@ -35,7 +35,7 @@ export default function ShoppingCartPageContent() {
   };
 
   return (
-    <>
+    <div style={{ paddingLeft: 40, paddingRight: 40, paddingTop: 24 }}>
       <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between' }}>
         <Button onClick={() => setIsAddShoppingCartModalDialogOpen(true)} variant="contained">Add Cart</Button>
         <Button onClick={() => setIsShowLogoutConfirmationModalDialog(true)} variant="contained" color='error'>Logout</Button>
@@ -57,6 +57,6 @@ export default function ShoppingCartPageContent() {
         autoHideDuration={2500}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       />
-    </>
+    </div>
   );
 };
